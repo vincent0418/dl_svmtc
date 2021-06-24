@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras import callbacks
 from tensorflow.keras.layers import Dense, Dropout, LSTM
 from tensorflow.keras.models import Sequential, load_model
 
@@ -73,18 +73,17 @@ model.summary()
 model.compile(optimizer='adam',
               loss='mean_squared_error')
 
-# Define callbacks
-
-# Save weights only for best model
-checkpointer = ModelCheckpoint(filepath='weights_best.hdf5',
-                               verbose=2,
-                               save_best_only=True)
+early_stopping = callbacks.EarlyStopping(
+    min_delta=0.001,  # minimium amount of change to count as an improvement
+    patience=20,  # how many epochs to wait before stopping
+    restore_best_weights=True,
+)
 
 model.fit(x_train,
           y_train,
-          epochs=50,
-          batch_size=256,
-          callbacks=[checkpointer])
+          epochs=25,
+          batch_size=32,
+          callbacks=[early_stopping])
 
 # Save model in file
 model.save("model.h5")
