@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.layers import Dense, Dropout, LSTM
+from tensorflow.keras import callbacks
+from tensorflow.keras.layers import Dense, Dropout, GRU
 from tensorflow.keras.models import Sequential, load_model
 
 
@@ -49,17 +49,17 @@ x_train, y_train = np.array(x_train), np.array(y_train)
 x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
 
 
-# Build LSTM model
-def LSTM_model():
+# Build GRU model
+def GRU_model():
     model = Sequential()
 
-    model.add(LSTM(units=50, return_sequences=True, input_shape=(x_train.shape[1], 1)))
+    model.add(GRU(units=25, return_sequences=True, input_shape=(x_train.shape[1], 1)))
     model.add(Dropout(0.2))
 
-    model.add(LSTM(units=50, return_sequences=True))
+    model.add(GRU(units=25, return_sequences=True))
     model.add(Dropout(0.2))
 
-    model.add(LSTM(units=50))
+    model.add(GRU(units=25))
     model.add(Dropout(0.2))
 
     model.add(Dense(units=1))
@@ -68,23 +68,24 @@ def LSTM_model():
 
 
 # Training
-model = LSTM_model()
+model = GRU_model()
 model.summary()
 model.compile(optimizer='adam',
               loss='mean_squared_error')
 
 # Define callbacks
 
-# Save weights only for best model
-checkpointer = ModelCheckpoint(filepath='weights_best.hdf5',
-                               verbose=2,
-                               save_best_only=True)
+early_stopping = callbacks.EarlyStopping(
+    min_delta=0.001,  # minimium amount of change to count as an improvement
+    patience=20,  # how many epochs to wait before stopping
+    restore_best_weights=True,
+)
 
 model.fit(x_train,
           y_train,
           epochs=25,
-          batch_size=32,
-          callbacks=[checkpointer])
+          batch_size=256,
+          callbacks=[early_stopping])
 
 # Save model in file
 model.save("model.h5")
